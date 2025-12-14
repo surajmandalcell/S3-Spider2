@@ -6,6 +6,8 @@ import { UserController } from "../user/user.controller";
 import morgan from "morgan";
 import Container from "typedi";
 import { S3Controller } from "../s3/s3.controller";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 
 export class App {
     static setup() {
@@ -15,6 +17,43 @@ export class App {
         const userController = Container.get(UserController);
         const s3Controller = Container.get(S3Controller)
         app.disable('x-powered-by');
+        
+        // Security: Use helmet for comprehensive security headers
+        app.use(helmet({
+            contentSecurityPolicy: {
+                directives: {
+                    defaultSrc: ["'self'"],
+                    scriptSrc: ["'self'"],
+                    styleSrc: ["'self'", "'unsafe-inline'"],
+                    imgSrc: ["'self'", "data:", "https:"],
+                    connectSrc: ["'self'"],
+                    fontSrc: ["'self'"],
+                    objectSrc: ["'none'"],
+                    frameAncestors: ["'none'"],
+                },
+            },
+            crossOriginEmbedderPolicy: false,
+        }));
+
+        // Security: Rate limiting to prevent brute force attacks
+        const limiter = rateLimit({
+            windowMs: 15 * 60 * 1000, // 15 minutes
+            max: 100, // limit each IP to 100 requests per windowMs
+            standardHeaders: true,
+            legacyHeaders: false,
+            message: { success: false, error: "Too many requests, please try again later" }
+        });
+        app.use(limiter);
+
+        // Stricter rate limit for auth endpoints
+        const authLimiter = rateLimit({
+            windowMs: 15 * 60 * 1000,
+            max: 10, // limit each IP to 10 login attempts per 15 min
+            standardHeaders: true,
+            legacyHeaders: false,
+            message: { success: false, error: "Too many authentication attempts" }
+        });
+
         app.use(morgan("dev"));
 
         const origin = process.env.NODE_ENV == "production" ? process.env["FRONTEND_CLIENT"]?.split(",") || [] : "*";
@@ -30,7 +69,7 @@ export class App {
         };
 
         app.use(cors(corsOptions));
-        app.use(express.json());
+        app.use(express.json({ limit: '10mb' }));
 
         app.use((err: Error, _: Request, res: Response, next: NextFunction) => {
             if (err instanceof SyntaxError) {
@@ -44,7 +83,7 @@ export class App {
 
         app.get('/api', middlwares.onPing.bind(middlwares));
 
-        app.use("/api/auth", authController.routes());
+        app.use("/api/auth", authLimiter, authController.routes());
 
         app.use("/api/user", userController.routes());
 

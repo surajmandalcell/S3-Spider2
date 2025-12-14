@@ -27,7 +27,7 @@ export class ConfigService {
         _.jwt_secret = process.env["JWT_SECRET"];
         _.port = process.env["PORT"];
         _.env = process.env["NODE_ENV"] || "development";
-        _.frontend_url = process.env["FROTEND_CLIENT"];
+        _.frontend_url = process.env["FRONTEND_CLIENT"];
         _.cache_enabled = process.env["CACHE_ENABLED"];
         _.cache_host = process.env["CACHE_HOST"];
         _.cache_user = process.env["CACHE_USER"];
