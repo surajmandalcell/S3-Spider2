@@ -1,6 +1,6 @@
-#builder stage
+# Builder stage
 
-FROM node:18-alpine as builder
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY ["tsconfig.json", "./"]
 
 RUN npm run build
 
-# final
+# Final stage
 
 FROM node:18-alpine
 
@@ -24,9 +24,8 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-ENV NODE_ENV production
-
-ENV PORT 5000
+ENV NODE_ENV=production
+ENV PORT=5000
 
 EXPOSE 5000
 
@@ -34,7 +33,7 @@ COPY --from=builder /app/package.json ./
 
 COPY --from=builder /app/package-lock.json ./
 
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
 
