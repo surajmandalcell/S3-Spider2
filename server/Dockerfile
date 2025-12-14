@@ -6,7 +6,7 @@ WORKDIR /app
 
 COPY ["package.json","package-lock.json","./"]
 
-RUN npm install
+RUN npm ci
 
 COPY ["src","./src"]
 
@@ -17,6 +17,10 @@ RUN npm run build
 # final
 
 FROM node:18-alpine
+
+# Security: Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
 
 WORKDIR /app
 
@@ -30,8 +34,15 @@ COPY --from=builder /app/package.json ./
 
 COPY --from=builder /app/package-lock.json ./
 
-RUN npm install --production
+RUN npm ci --only=production && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
+
+# Security: Run as non-root user
+USER nodejs
+
+# Healthcheck for container orchestration
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:5000/api || exit 1
 
 CMD [ "node", "dist/main.js"]
