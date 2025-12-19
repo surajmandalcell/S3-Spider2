@@ -7,6 +7,15 @@
 <img src="./screens/buckets.PNG" alt="app ui">
 
 
+# TODO
+- Add authentication(email/password) (single user mode for now)
+- Add option to save config in account
+- merge everything into one secure nextjs app
+- Write tests
+- Write deployment scripts for Railway
+- Compact Readme
+- Maximize security (audit)
+
 ## Motivation
 
 This tool was built for internal marketing teams using s3 frequently for uploading and working with media. I was looking for simple solution where multiple users can access s3 easily without needing to create IAM user for each of them, We have multiple accounts. Surprisingly there aren't many tools available for this. Found S3browser(windows only client), ExpanDrive(Cross platform desktop app) but we didn't want to install any software on user's machine for security reasons, thus built this. I thought someone might find this helpful out there. S3Spider is a web app to manage files in s3, works with multiple accounts, has simplified user management with role based authorization. 
